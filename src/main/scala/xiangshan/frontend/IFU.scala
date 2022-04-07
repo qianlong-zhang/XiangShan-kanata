@@ -482,7 +482,8 @@ with HasCircularQueuePtrHelper
   if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
       val if0_fetch_sid = RegInit(0.U(64.W))
       when(fromFtq.req.fire() && !f0_flush) {
-        if0_fetch_sid := if0_fetch_sid + FetchWidth.U
+        // every fetch req fetch PredictWidth(in FetchToIBuffer) insts into ibuffer
+        if0_fetch_sid := if0_fetch_sid + PredictWidth.U
       }                  
       val kanata_stageIF0 = Module(new DifftestKanataStageInfo)            
       kanata_stageIF0.io.clock := clock

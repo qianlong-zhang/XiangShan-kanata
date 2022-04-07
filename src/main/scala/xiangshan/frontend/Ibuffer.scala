@@ -101,7 +101,9 @@ class Ibuffer(implicit p: Parameters) extends XSModule with HasCircularQueuePtrH
     inWire.ipf := io.in.bits.ipf(i)
     inWire.acf := io.in.bits.acf(i)
     inWire.crossPageIPFFix := io.in.bits.crossPageIPFFix(i)
-    inWire.fetch_sid := io.in.bits.fetch_sid
+    // before write ibuf, every PredictWidth share one fetch_sid
+    // write every ibuf entry with unique fetch_sid
+    inWire.fetch_sid := io.in.bits.fetch_sid + i.U 
     for(k<-0 until 10){
     inWire.triggered.triggerHitVec(k) := false.B
     }
@@ -143,7 +145,7 @@ class Ibuffer(implicit p: Parameters) extends XSModule with HasCircularQueuePtrH
     io.out(i).bits.ssid := DontCare
     io.out(i).bits.replayInst := false.B
     io.out(i).bits.trigger := outWire.triggered
-    io.out(i).bits.uopsid := outWire.fetch_sid + i.U
+    io.out(i).bits.uopsid := outWire.fetch_sid
     io.out(i).bits.uopmid := 0.U  
 
   }

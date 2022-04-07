@@ -845,7 +845,7 @@ class Rob(numWbPorts: Int)(implicit p: Parameters) extends XSModule with HasCirc
       kanata_cm.io.clock := clock
       kanata_cm.io.coreid:= io.hartId
       kanata_cm.io.index := i.U
-      kanata_cm.io.stage := 12.U /*write back*/
+      kanata_cm.io.stage := 12.U /*commit*/
       kanata_cm.io.valid := io.commits.valid(i) && !io.commits.isWalk
       kanata_cm.io.stall := !io.commits.valid(i)
       kanata_cm.io.clear := io.commits.isWalk

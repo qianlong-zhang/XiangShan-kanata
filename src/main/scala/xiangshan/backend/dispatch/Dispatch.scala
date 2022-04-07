@@ -163,6 +163,9 @@ class Dispatch(implicit p: Parameters) extends XSModule with HasExceptionNO {
       //     runahead.io.checkpoint_id
       //   );
       // }
+         
+
+
 
       val mempred_check = Module(new DifftestRunaheadMemdepPred)
       mempred_check.io.clock     := clock
@@ -184,6 +187,8 @@ class Dispatch(implicit p: Parameters) extends XSModule with HasExceptionNO {
       }
       updatedUop(i).debugInfo.runahead_checkpoint_id := debug_runahead_checkpoint_id
     }
+
+
   }
 
   // store set perf count
@@ -260,6 +265,21 @@ class Dispatch(implicit p: Parameters) extends XSModule with HasExceptionNO {
     XSDebug(io.toIntDq.req(i).valid, p"pc 0x${Hexadecimal(io.toIntDq.req(i).bits.cf.pc)} int index $i\n")
     XSDebug(io.toFpDq.req(i).valid , p"pc 0x${Hexadecimal(io.toFpDq.req(i).bits.cf.pc )} fp  index $i\n")
     XSDebug(io.toLsDq.req(i).valid , p"pc 0x${Hexadecimal(io.toLsDq.req(i).bits.cf.pc )} ls  index $i\n")
+
+    
+   //kanata print
+    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
+      val kanata_dispatch = Module(new DifftestKanataStageInfo)           
+        kanata_dispatch.io.clock := clock
+        kanata_dispatch.io.coreid:= io.hartId
+        kanata_dispatch.io.index := i.U
+        kanata_dispatch.io.stage := 6.U
+        kanata_dispatch.io.valid := io.fromRename(i).valid
+        kanata_dispatch.io.stall := io.enqRob.req(i).valid
+        kanata_dispatch.io.clear := io.redirect.valid
+        kanata_dispatch.io.sid   := io.fromRename(i).bits.cf.uopsid
+        kanata_dispatch.io.mid   := io.fromRename(i).bits.cf.uopmid
+    }   
   }
 
   /**

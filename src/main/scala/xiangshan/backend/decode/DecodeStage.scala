@@ -21,9 +21,12 @@ import chisel3._
 import chisel3.util._
 import xiangshan._
 import utils._
+import difftest._
 
 class DecodeStage(implicit p: Parameters) extends XSModule {
   val io = IO(new Bundle() {
+    // for kanata print out
+    val hartId = Input(UInt(8.W))
     // from Ibuffer
     val in = Vec(DecodeWidth, Flipped(DecoupledIO(new CtrlFlow)))
     // to DecBuffer
@@ -44,6 +47,35 @@ class DecodeStage(implicit p: Parameters) extends XSModule {
     io.out(i).bits       := decoders(i).io.deq.cf_ctrl
     io.in(i).ready       := io.out(i).ready
   }
+
+    //kanata print
+  if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
+     val kanata_decode = Module(new DifftestKanataStageInfo)     
+     for (i <- 0 until DecodeWidth) {
+      kanata_decode.io.clock := clock
+      kanata_decode.io.coreid:= io.hartId
+      kanata_decode.io.index := i.U
+      kanata_decode.io.stage := 4.U
+      kanata_decode.io.valid := io.in(i).valid
+      kanata_decode.io.stall := !io.out(0).ready
+      kanata_decode.io.clear := 0.U
+      kanata_decode.io.sid   := io.in(i).bits.uopsid
+      kanata_decode.io.mid   := io.in(i).bits.uopmid
+     }
+        
+    val kanata_decode_insn = Module(new DifftestKanataDecodeInsn)
+    for (i <- 0 until DecodeWidth) {        
+      kanata_decode_insn.io.clock  := clock
+      kanata_decode_insn.io.coreid := io.hartId
+      kanata_decode_insn.io.index  := i.U
+      kanata_decode_insn.io.sid    := io.in(i).bits.uopsid
+      kanata_decode_insn.io.mid    := io.in(i).bits.uopmid
+      kanata_decode_insn.io.pc     := io.in(i).bits.pc
+      kanata_decode_insn.io.insn   := io.in(i).bits.instr  
+    }
+  }
+  
+   
 
   // instruction fusion
   val fusionDecoder = Module(new FusionDecoder())

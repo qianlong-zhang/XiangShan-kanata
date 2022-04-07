@@ -273,9 +273,11 @@ class CtrlBlock(implicit p: Parameters) extends XSModule
   io.frontend.toFtq.robFlush <> RegNext(rob.io.flushOut)
   io.frontend.toFtq.stage3Redirect := stage3Redirect
 
+  decode.io.hartId := io.hartId
   decode.io.in <> io.frontend.cfVec
   decode.io.csrCtrl := io.csrCtrl
 
+  rename.io.hartId := io.hartId
   // memory dependency predict
   // when decode, send fold pc to mdp
   for (i <- 0 until DecodeWidth) {
@@ -365,6 +367,19 @@ class CtrlBlock(implicit p: Parameters) extends XSModule
     rob_wb.valid := RegNext(wb.valid && !wb.bits.uop.robIdx.needFlush(stage2Redirect))
     rob_wb.bits := RegNext(wb.bits)
     rob_wb.bits.uop.debugInfo.writebackTime := timer
+
+    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+        val kanata_wb = Module(new DifftestKanataStageInfo)           
+        kanata_wb.io.clock := clock
+        kanata_wb.io.coreid:= io.hartId
+        kanata_wb.io.index := DontCare
+        kanata_wb.io.stage := 11.U /*write back*/
+        kanata_wb.io.valid := wb.valid
+        kanata_wb.io.stall := 0.U
+        kanata_wb.io.clear := wb.bits.uop.robIdx.needFlush(stage2Redirect)
+        kanata_wb.io.sid   := wb.bits.uop.cf.uopsid
+        kanata_wb.io.mid   := wb.bits.uop.cf.uopmid
+    }
   }
 
   io.redirect <> stage2Redirect

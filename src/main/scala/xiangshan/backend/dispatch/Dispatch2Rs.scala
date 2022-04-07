@@ -75,6 +75,8 @@ class Dispatch2RsImp(outer: Dispatch2Rs)(implicit p: Parameters) extends LazyMod
   XSPerfAccumulate("in_fire", PopCount(io.in.map(_.fire)))
   XSPerfAccumulate("out_valid", PopCount(io.out.map(_.valid)))
   XSPerfAccumulate("out_fire", PopCount(io.out.map(_.fire)))
+
+  
 }
 
 object Dispatch2RsImp {
@@ -139,6 +141,7 @@ class Dispatch2RsLessExuImp(outer: Dispatch2Rs)(implicit p: Parameters) extends 
       }
       println(s"Dispatch2Rs ports balance between $i and ${pairIndex(i)}")
     }
+
   }
 
   // srcState is read from outside and connected directly
@@ -211,6 +214,7 @@ class Dispatch2RsDistinctImp(outer: Dispatch2Rs)(implicit p: Parameters) extends
       in(i).bits.sqIdx := enqLsq.resp(i).sqIdx
 
       enqLsq.req(i).valid := in(i).valid && io.in(i).ready
+     
     }
   }
 

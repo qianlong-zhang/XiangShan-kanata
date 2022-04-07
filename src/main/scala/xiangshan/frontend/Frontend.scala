@@ -41,6 +41,7 @@ class FrontendImp (outer: Frontend) extends LazyModuleImp(outer)
   with HasExceptionNO
 {
   val io = IO(new Bundle() {
+    val hartId = Input(UInt(8.W))
     val fencei = Input(Bool())
     val ptw = new TlbPtwIO(2)
     val backend = new FrontendToCtrlIO
@@ -66,6 +67,9 @@ class FrontendImp (outer: Frontend) extends LazyModuleImp(outer)
   val ibuffer =  Module(new Ibuffer)
   val ftq = Module(new Ftq)
 
+  //kanata need hatid
+  ifu.io.hartId := io.hartId
+  
   //PFEvent
   val pfevent = Module(new PFEvent)
   val tlbCsr = RegNext(io.tlbCsr)

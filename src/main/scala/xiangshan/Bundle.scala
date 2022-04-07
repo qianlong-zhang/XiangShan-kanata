@@ -130,6 +130,10 @@ class CtrlFlow(implicit p: Parameters) extends XSBundle {
   // This inst will flush all the pipe when it is the oldest inst in ROB,
   // then replay from this inst itself
   val replayInst = Bool()
+
+  //for Kanata debug output, pass sid mid to following stages  
+  val uopsid = UInt(10.W)
+  val uopmid = UInt(10.W)
 }
 
 

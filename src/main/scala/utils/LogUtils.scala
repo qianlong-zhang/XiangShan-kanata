@@ -25,6 +25,7 @@ object XSLogLevel extends Enumeration {
   type XSLogLevel = Value
 
   val ALL   = Value(0, "ALL  ")
+  val KANATA= Value("KANATA")
   val DEBUG = Value("DEBUG")
   val INFO  = Value("INFO ")
   val PERF  = Value("PERF ")
@@ -41,9 +42,10 @@ object XSLog {
     val debugOpts = p(DebugOptionsKey)
     val logEnable = WireInit(false.B)
     val logTimestamp = WireInit(0.U(64.W))
+    val enableKanata = debugOpts.EnableKanata && debugLevel != XSLogLevel.DEBUG && debugLevel != XSLogLevel.PERF
     val enableDebug = debugOpts.EnableDebug && debugLevel != XSLogLevel.PERF
     val enablePerf = debugOpts.EnablePerfDebug && debugLevel == XSLogLevel.PERF
-    if (!debugOpts.FPGAPlatform && (enableDebug || enablePerf || debugLevel == XSLogLevel.ERROR)) {
+    if (!debugOpts.FPGAPlatform && (enableKanata || enableDebug || enablePerf || debugLevel == XSLogLevel.ERROR)) {
       ExcitingUtils.addSink(logEnable, "DISPLAY_LOG_ENABLE")
       ExcitingUtils.addSink(logTimestamp, "logTimestamp")
       val check_cond = (if (debugLevel == XSLogLevel.ERROR) true.B else logEnable) && cond
@@ -111,6 +113,8 @@ sealed abstract class LogHelper(val logLevel: XSLogLevel){
     }
   }
 }
+
+object XSKanata extends LogHelper(XSLogLevel.KANATA)
 
 object XSDebug extends LogHelper(XSLogLevel.DEBUG)
 

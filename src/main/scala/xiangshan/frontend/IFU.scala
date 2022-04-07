@@ -23,6 +23,7 @@ import xiangshan._
 import xiangshan.cache.mmu._
 import xiangshan.frontend.icache._
 import utils._
+import difftest._
 import xiangshan.backend.fu.{PMPReqBundle, PMPRespBundle}
 
 trait HasInstrMMIOConst extends HasXSParameter with HasIFUConst{
@@ -66,15 +67,16 @@ class UncacheInterface(implicit p: Parameters) extends XSBundle {
   val toUncache   = DecoupledIO( new InsUncacheReq )
 }
 class NewIFUIO(implicit p: Parameters) extends XSBundle {
-  val ftqInter        = new FtqInterface
-  val icacheInter     = Vec(2, Flipped(new ICacheMainPipeBundle))
-  val icacheStop      = Output(Bool())
-  val icachePerfInfo  = Input(new ICachePerfInfo)
-  val toIbuffer       = Decoupled(new FetchToIBuffer)
-  val uncacheInter   =  new UncacheInterface
-  val frontendTrigger = Flipped(new FrontendTdataDistributeIO)
+  val hartId           = Input(UInt(8.W))
+  val ftqInter         = new FtqInterface
+  val icacheInter      = Vec(2, Flipped(new ICacheMainPipeBundle))
+  val icacheStop       = Output(Bool())
+  val icachePerfInfo   = Input(new ICachePerfInfo)
+  val toIbuffer        = Decoupled(new FetchToIBuffer)
+  val uncacheInter     =  new UncacheInterface
+  val frontendTrigger  = Flipped(new FrontendTdataDistributeIO)
   val csrTriggerEnable = Input(Vec(4, Bool()))
-  val rob_commits = Flipped(Vec(CommitWidth, Valid(new RobCommitInfo)))
+  val rob_commits      = Flipped(Vec(CommitWidth, Valid(new RobCommitInfo)))
 }
 
 // record the situation in which fallThruAddr falls into
@@ -122,6 +124,8 @@ with HasCircularQueuePtrHelper
     val mmio = Bool()
   }
 
+  //val sid = UInt(10.W)
+  //val mid = UInt(10.W)
 
   //---------------------------------------------
   //  Fetch Stage 1 :
@@ -136,7 +140,7 @@ with HasCircularQueuePtrHelper
   val f0_vSetIdx                           = VecInit(get_idx((f0_ftq_req.startAddr)), get_idx(f0_ftq_req.fallThruAddr))
   val f0_fire                              = fromFtq.req.fire()
 
-  val f0_flush, f1_flush, f2_flush, f3_flush = WireInit(false.B)
+    val f0_flush, f1_flush, f2_flush, f3_flush = WireInit(false.B)
   val from_bpu_f0_flush, from_bpu_f1_flush, from_bpu_f2_flush, from_bpu_f3_flush = WireInit(false.B)
 
   from_bpu_f0_flush := fromFtq.flushFromBpu.shouldFlushByStage2(f0_ftq_req.ftqIdx) ||
@@ -147,6 +151,7 @@ with HasCircularQueuePtrHelper
   f2_flush := f3_flush || f3_redirect
   f1_flush := f2_flush || from_bpu_f1_flush
   f0_flush := f1_flush || from_bpu_f0_flush
+  
 
   val f1_ready, f2_ready, f3_ready         = WireInit(false.B)
 
@@ -172,6 +177,8 @@ with HasCircularQueuePtrHelper
   val f1_doubleLine = RegEnable(next = f0_doubleLine, enable=f0_fire)
   val f1_vSetIdx    = RegEnable(next = f0_vSetIdx,    enable=f0_fire)
   val f1_fire       = f1_valid && f1_ready
+
+
 
   f1_ready := f2_ready || !f1_valid
 
@@ -261,6 +268,8 @@ with HasCircularQueuePtrHelper
   val f3_situation      = RegEnable(next = f2_situation,  enable=f2_fire)
   val f3_doubleLine     = RegEnable(next = f2_doubleLine, enable=f2_fire)
   val f3_fire           = io.toIbuffer.fire()
+
+
 
   f3_ready := io.toIbuffer.ready || !f3_valid
 
@@ -404,6 +413,7 @@ with HasCircularQueuePtrHelper
   io.toIbuffer.bits.acf       := preDecoderOut.accessFault
   io.toIbuffer.bits.crossPageIPFFix := preDecoderOut.crossPageIPF
   io.toIbuffer.bits.triggered := preDecoderOut.triggered
+  io.toIbuffer.bits.fetch_sid := 0.U
 
   //Write back to Ftq
   val f3_cache_fetch = f3_valid && !(f2_fire && !f2_flush)
@@ -465,6 +475,67 @@ with HasCircularQueuePtrHelper
   }
 
   f3_redirect := (!predecodeFlushReg && predecodeFlush && !f3_req_is_mmio) || (f3_mmio_req_commit && f3_mmio_use_seq_pc)
+      
+
+  
+  //kanata print
+  if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
+      val if0_fetch_sid = RegInit(0.U(64.W))
+      when(fromFtq.req.fire() && !f0_flush) {
+        if0_fetch_sid := if0_fetch_sid + FetchWidth.U
+      }                  
+      val kanata_stageIF0 = Module(new DifftestKanataStageInfo)            
+      kanata_stageIF0.io.clock := clock
+      kanata_stageIF0.io.coreid:= io.hartId
+      kanata_stageIF0.io.index := DontCare
+      kanata_stageIF0.io.stage := 0.U /*IF0*/
+      kanata_stageIF0.io.valid := f0_valid
+      kanata_stageIF0.io.stall := 0.U
+      kanata_stageIF0.io.clear := f0_flush
+      kanata_stageIF0.io.sid   := if0_fetch_sid
+      kanata_stageIF0.io.mid   := 0.U
+     
+      
+      val if1_fetch_sid = RegEnable(next = if0_fetch_sid,    enable=f0_fire)
+      val kanata_stageIF1 = Module(new DifftestKanataStageInfo)
+      kanata_stageIF1.io.clock := clock
+      kanata_stageIF1.io.coreid:= io.hartId
+      kanata_stageIF1.io.index := DontCare
+      kanata_stageIF1.io.stage := 1.U
+      kanata_stageIF1.io.valid := f1_valid
+      kanata_stageIF1.io.stall := 0.U
+      kanata_stageIF1.io.clear := f1_flush
+      kanata_stageIF1.io.sid   := if1_fetch_sid
+      kanata_stageIF1.io.mid   := 0.U
+
+      val if2_fetch_sid = RegEnable(next = if1_fetch_sid,    enable=f1_fire)
+      val kanata_stageIF2 = Module(new DifftestKanataStageInfo)
+      kanata_stageIF2.io.clock := clock
+      kanata_stageIF2.io.coreid:= io.hartId
+      kanata_stageIF2.io.index := DontCare
+      kanata_stageIF2.io.stage := 2.U
+      kanata_stageIF2.io.valid := f2_valid
+      kanata_stageIF2.io.stall := 0.U
+      kanata_stageIF2.io.clear := f2_flush
+      kanata_stageIF2.io.sid   := if2_fetch_sid
+      kanata_stageIF2.io.mid   := 0.U
+
+      val if3_fetch_sid = RegEnable(next = if2_fetch_sid,    enable=f2_fire)
+      val kanata_stageIF3 = Module(new DifftestKanataStageInfo)
+      kanata_stageIF3.io.clock := clock
+      kanata_stageIF3.io.coreid:= io.hartId
+      kanata_stageIF3.io.index := DontCare  
+      kanata_stageIF3.io.stage := 3.U
+      kanata_stageIF3.io.valid := f3_valid
+      kanata_stageIF3.io.stall := 0.U
+      kanata_stageIF3.io.clear := f3_flush
+      kanata_stageIF3.io.sid   := if3_fetch_sid
+      kanata_stageIF3.io.mid   := 0.U
+
+      io.toIbuffer.bits.fetch_sid := if3_fetch_sid
+  }
+  
+
 
   XSPerfAccumulate("ifu_req",   io.toIbuffer.fire() )
   XSPerfAccumulate("ifu_miss",  io.toIbuffer.fire() && !f3_hit )

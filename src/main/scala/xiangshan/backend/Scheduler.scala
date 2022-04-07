@@ -30,6 +30,7 @@ import xiangshan.backend.issue.{ReservationStation, ReservationStationWrapper, R
 import xiangshan.backend.regfile.{Regfile, RfReadPort, RfWritePort}
 import xiangshan.backend.rename.{BusyTable, BusyTableReadIO}
 import xiangshan.mem.{LsqEnqIO, MemWaitUpdateReq, SqPtr, StoreDataBundle}
+import difftest._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -123,7 +124,7 @@ class Scheduler(
     val rs = LazyModule(new ReservationStationWrapper())
     rs.addIssuePort(config, numDeq)
     rs.addWakeup(wakeupPorts(i))
-    rs.addEarlyWakeup(numAllFastPorts(i))
+    rs.addEarlyWakeup(numAllFastPorts(i))    
     rs
   }
   // connect to dispatch
@@ -348,6 +349,7 @@ class SchedulerImp(outer: Scheduler) extends LazyModuleImp(outer) with HasXSPara
   for (((node, cfg), i) <- rs_all.zip(outer.configs.map(_._1)).zipWithIndex) {
     val rs = node.module
 
+    rs.io.hartId := io.hartId
     rs.io.redirect <> io.redirect
 
     val issueWidth = rs.io.deq.length
@@ -467,6 +469,24 @@ class SchedulerImp(outer: Scheduler) extends LazyModuleImp(outer) with HasXSPara
     difftest.io.coreid := io.hartId
     difftest.io.fpr := fpRfReadData.takeRight(32)
   }
+
+  //kanata print
+  if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {    
+    for (i <- 0 until outer.numIssuePorts) {
+    val kanata_dispatch2rs = Module(new DifftestKanataStageInfo)           
+
+      kanata_dispatch2rs.io.clock := clock
+      kanata_dispatch2rs.io.coreid:= io.hartId
+      kanata_dispatch2rs.io.index := i.U
+      kanata_dispatch2rs.io.stage := 7.U /*dispatch to rs*/
+      kanata_dispatch2rs.io.valid := io.issue(i).valid
+      kanata_dispatch2rs.io.stall := !io.issue(i).fire
+      kanata_dispatch2rs.io.clear := io.redirect.valid
+      kanata_dispatch2rs.io.sid   := io.issue(i).bits.uop.cf.uopsid
+      kanata_dispatch2rs.io.mid   := io.issue(i).bits.uop.cf.uopmid
+    }
+  }   
+
 
   XSPerfAccumulate("allocate_valid", PopCount(allocate.map(_.valid)))
   XSPerfAccumulate("allocate_fire", PopCount(allocate.map(_.fire())))

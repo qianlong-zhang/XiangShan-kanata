@@ -196,7 +196,7 @@ class DispatchQueue(size: Int, enqnum: Int, deqnum: Int, name: String)(implicit 
     // do not dequeue when io.redirect valid because it may cause dispatchPtr work improperly
     io.deq(i).valid := stateEntries(headPtr(i).value) === s_valid && !lastCycleMisprediction
   }
-
+   
   // debug: dump dispatch queue states
   XSDebug(p"head: ${headPtr(0)}, tail: ${tailPtr(0)}\n")
   XSDebug(p"state: ")

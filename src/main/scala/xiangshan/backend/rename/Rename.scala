@@ -24,9 +24,11 @@ import utils._
 import xiangshan.backend.rob.RobPtr
 import xiangshan.backend.rename.freelist._
 import xiangshan.mem.mdp._
+import difftest._
 
 class Rename(implicit p: Parameters) extends XSModule {
   val io = IO(new Bundle() {
+    val hartId = Input(UInt(8.W))
     val redirect = Flipped(ValidIO(new Redirect))
     val robCommits = Flipped(new RobCommitIO)
     // from decode
@@ -168,6 +170,22 @@ class Rename(implicit p: Parameters) extends XSModule {
 
     intRefCounter.io.allocate(i).valid := intSpecWen(i)
     intRefCounter.io.allocate(i).bits := io.out(i).bits.pdest
+
+
+      //kanata print
+    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
+      val kanata_rename = Module(new DifftestKanataStageInfo)           
+        kanata_rename.io.clock := clock
+        kanata_rename.io.coreid:= io.hartId
+        kanata_rename.io.index := i.U
+        kanata_rename.io.stage := 5.U
+        kanata_rename.io.valid := io.in(i).valid
+        kanata_rename.io.stall := io.in(i).valid && !io.out(i).valid
+        kanata_rename.io.clear := io.redirect.valid
+        kanata_rename.io.sid   := io.in(i).bits.cf.uopsid
+        kanata_rename.io.mid   := io.in(i).bits.cf.uopmid
+    }
+    
   }
 
   /**

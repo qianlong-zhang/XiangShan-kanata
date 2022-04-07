@@ -26,11 +26,12 @@ import xiangshan.backend.exu.ExuConfig
 import xiangshan.backend.fu.FuConfig
 import xiangshan.mem.{SqPtr, StoreDataBundle, MemWaitUpdateReq}
 import xiangshan.backend.fu.fpu.{FMAMidResult, FMAMidResultIO}
+import difftest._
 
 import scala.math.max
 
 case class RSParams
-(
+(  
   var numEntries: Int = 0,
   var numEnq: Int = 0,
   var numDeq: Int = 0,
@@ -155,6 +156,7 @@ class ReservationStationWrapper(implicit p: Parameters) extends LazyModule with 
     val io = IO(new ReservationStationIO(params)(updatedP))
     val perf = IO(Vec(rs.length, Output(new RsPerfCounter)))
 
+    rs.foreach(_.io.hartId <> io.hartId)
     rs.foreach(_.io.redirect <> io.redirect)
     io.numExist <> rs.map(_.io.numExist).reduce(_ +& _)
     io.fromDispatch <> rs.flatMap(_.io.fromDispatch)
@@ -204,6 +206,9 @@ class ReservationStationWrapper(implicit p: Parameters) extends LazyModule with 
 }
 
 class ReservationStationIO(params: RSParams)(implicit p: Parameters) extends XSBundle {
+  // for kanata print
+  val hartId = Input(UInt(8.W))
+
   val redirect = Flipped(ValidIO(new Redirect))
   val numExist = Output(UInt(log2Up(params.numEntries + 1).W))
   // enq
@@ -296,6 +301,20 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
     payloadArray.io.write(i).addr := select.io.allocate(i).bits
     payloadArray.io.write(i).data := io.fromDispatch(i).bits
     payloadArray.io.write(i).data.debugInfo.enqRsTime := GTimer()
+
+
+    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+      val kanata_rsenq = Module(new DifftestKanataStageInfo)           
+      kanata_rsenq.io.clock := clock
+      kanata_rsenq.io.coreid:= io.hartId
+      kanata_rsenq.io.index := i.U
+      kanata_rsenq.io.stage := 8.U /*issue enq*/
+      kanata_rsenq.io.valid := io.fromDispatch(i).valid
+      kanata_rsenq.io.stall := !io.fromDispatch(i).fire
+      kanata_rsenq.io.clear := !enqShouldNotFlushed(i)
+      kanata_rsenq.io.sid   := io.fromDispatch(i).bits.cf.uopsid
+      kanata_rsenq.io.mid   := io.fromDispatch(i).bits.cf.uopmid
+    }
   }
 
   // when config.checkWaitBit is set, we need to block issue until the corresponding store issues
@@ -377,6 +396,20 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
     s1_out(i).valid := issueVec(i).valid && !s1_out(i).bits.uop.robIdx.needFlush(io.redirect)
     statusArray.io.issueGranted(i).valid := issueVec(i).valid && s1_out(i).ready
     statusArray.io.issueGranted(i).bits := issueVec(i).bits
+
+    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+      val kanata_issue_sel = Module(new DifftestKanataStageInfo)           
+      kanata_issue_sel.io.clock := clock
+      kanata_issue_sel.io.coreid:= io.hartId
+      kanata_issue_sel.io.index := i.U
+      kanata_issue_sel.io.stage := 9.U /*issue enq*/
+      kanata_issue_sel.io.valid := s1_out(i).valid
+      kanata_issue_sel.io.stall := issueVec(i).valid && !s1_out(i).ready
+      kanata_issue_sel.io.clear := s1_out(i).bits.uop.robIdx.needFlush(io.redirect)
+      kanata_issue_sel.io.sid   := s1_out(i).bits.uop.cf.uopsid
+      kanata_issue_sel.io.mid   := s1_out(i).bits.uop.cf.uopmid
+    }
+
     if (io.feedback.isDefined) {
       // feedbackSlow
       statusArray.io.deqResp(2*i).valid := io.feedback.get(i).feedbackSlow.valid
@@ -410,6 +443,20 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
       wakeupQueue.io.redirect := io.redirect
       io.fastWakeup.get(i) := wakeupQueue.io.out
       XSPerfAccumulate(s"fast_blocked_$i", issueVec(i).valid && fuCheck && !s1_out(i).ready)
+
+       //kanata print
+    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {   
+      val kanata_issue_fastdeq = Module(new DifftestKanataStageInfo)           
+      kanata_issue_fastdeq.io.clock := clock
+      kanata_issue_fastdeq.io.coreid:= io.hartId
+      kanata_issue_fastdeq.io.index := i.U
+      kanata_issue_fastdeq.io.stage := 10.U /*issue fast deq*/
+      kanata_issue_fastdeq.io.valid := (issueVec(i).valid && s1_out(i).ready && fuCheck)
+      kanata_issue_fastdeq.io.stall :=  (issueVec(i).valid && fuCheck && !s1_out(i).ready)
+      kanata_issue_fastdeq.io.clear := s1_out(i).bits.uop.robIdx.needFlush(io.redirect)
+      kanata_issue_fastdeq.io.sid   := s1_out(i).bits.uop.cf.uopsid
+      kanata_issue_fastdeq.io.mid   := s1_out(i).bits.uop.cf.uopmid
+      }
     }
   }
   statusArray.io.updateMidState := 0.U
@@ -554,6 +601,20 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
     s2_deq(i).ready := io.deq(i).ready
     io.deq(i).valid := s2_deq(i).valid
     io.deq(i).bits := s2_deq(i).bits
+
+    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+      val kanata_issue_normaldeq = Module(new DifftestKanataStageInfo)           
+      kanata_issue_normaldeq.io.clock := clock
+      kanata_issue_normaldeq.io.coreid:= io.hartId
+      kanata_issue_normaldeq.io.index := i.U
+      kanata_issue_normaldeq.io.stage := 10.U /*issue normal deq*/
+      kanata_issue_normaldeq.io.valid := s2_deq(i).valid
+      kanata_issue_normaldeq.io.stall := !s2_deq(i).ready
+      kanata_issue_normaldeq.io.clear := s2_deq(i).bits.uop.robIdx.needFlush(io.redirect)
+      kanata_issue_normaldeq.io.sid   := s2_deq(i).bits.uop.cf.uopsid
+      kanata_issue_normaldeq.io.mid   := s2_deq(i).bits.uop.cf.uopmid   
+    }
+
 
     // data: send to bypass network
     // TODO: these should be done outside RS

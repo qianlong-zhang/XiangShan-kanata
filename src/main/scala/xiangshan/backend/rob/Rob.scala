@@ -839,7 +839,8 @@ class Rob(numWbPorts: Int)(implicit p: Parameters) extends XSModule with HasCirc
   io.csr.perfinfo.retiredInstr := RegNext(retireCounter)
   io.robFull := !allowEnqueue
 
-  if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+  //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+  if (!env.FPGAPlatform){
     for (i <- 0 until CommitWidth) {
     val kanata_cm = Module(new DifftestKanataStageInfo)           
       kanata_cm.io.clock := clock

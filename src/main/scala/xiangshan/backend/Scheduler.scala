@@ -471,7 +471,8 @@ class SchedulerImp(outer: Scheduler) extends LazyModuleImp(outer) with HasXSPara
   }
 
   //kanata print
-  if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {    
+  //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {   
+  if (!env.FPGAPlatform){ 
     for (i <- 0 until outer.numIssuePorts) {
     val kanata_dispatch2rs = Module(new DifftestKanataStageInfo)           
 

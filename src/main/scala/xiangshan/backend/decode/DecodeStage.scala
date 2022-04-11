@@ -49,7 +49,8 @@ class DecodeStage(implicit p: Parameters) extends XSModule {
   }
 
     //kanata print
-  if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
+  //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) { 
+  if (!env.FPGAPlatform){     
      val kanata_decode = Module(new DifftestKanataStageInfo)     
      for (i <- 0 until DecodeWidth) {
       kanata_decode.io.clock := clock

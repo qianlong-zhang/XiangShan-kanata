@@ -479,7 +479,8 @@ with HasCircularQueuePtrHelper
 
   
   //kanata print
-  if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
+  //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
+    if (!env.FPGAPlatform){
       val if0_fetch_sid = RegInit(0.U(64.W))
       when(fromFtq.req.fire() && !f0_flush) {
         // every fetch req fetch PredictWidth(in FetchToIBuffer) insts into ibuffer

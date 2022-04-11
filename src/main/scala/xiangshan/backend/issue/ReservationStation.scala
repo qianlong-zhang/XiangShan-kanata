@@ -303,7 +303,8 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
     payloadArray.io.write(i).data.debugInfo.enqRsTime := GTimer()
 
 
-    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) { 
+    if (!env.FPGAPlatform){ 
       val kanata_rsenq = Module(new DifftestKanataStageInfo)           
       kanata_rsenq.io.clock := clock
       kanata_rsenq.io.coreid:= io.hartId
@@ -397,7 +398,8 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
     statusArray.io.issueGranted(i).valid := issueVec(i).valid && s1_out(i).ready
     statusArray.io.issueGranted(i).bits := issueVec(i).bits
 
-    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+    if (!env.FPGAPlatform){
       val kanata_issue_sel = Module(new DifftestKanataStageInfo)           
       kanata_issue_sel.io.clock := clock
       kanata_issue_sel.io.coreid:= io.hartId
@@ -445,7 +447,8 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
       XSPerfAccumulate(s"fast_blocked_$i", issueVec(i).valid && fuCheck && !s1_out(i).ready)
 
        //kanata print
-    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {   
+    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) { 
+    if (!env.FPGAPlatform){  
       val kanata_issue_fastdeq = Module(new DifftestKanataStageInfo)           
       kanata_issue_fastdeq.io.clock := clock
       kanata_issue_fastdeq.io.coreid:= io.hartId
@@ -602,7 +605,8 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
     io.deq(i).valid := s2_deq(i).valid
     io.deq(i).bits := s2_deq(i).bits
 
-    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {
+    if (!env.FPGAPlatform){  
       val kanata_issue_normaldeq = Module(new DifftestKanataStageInfo)           
       kanata_issue_normaldeq.io.clock := clock
       kanata_issue_normaldeq.io.coreid:= io.hartId

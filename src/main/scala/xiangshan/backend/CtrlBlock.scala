@@ -368,7 +368,8 @@ class CtrlBlock(implicit p: Parameters) extends XSModule
     rob_wb.bits := RegNext(wb.bits)
     rob_wb.bits.uop.debugInfo.writebackTime := timer
 
-    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+    if (!env.FPGAPlatform){
         val kanata_wb = Module(new DifftestKanataStageInfo)           
         kanata_wb.io.clock := clock
         kanata_wb.io.coreid:= io.hartId

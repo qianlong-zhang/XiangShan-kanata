@@ -305,7 +305,7 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
 
     //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) { 
     if (!env.FPGAPlatform){ 
-      val kanata_rsenq = Module(new DifftestKanataStageInfo)           
+      val kanata_rsenq = Module(new DifftestKanataStageIS8Info)           
       kanata_rsenq.io.clock := clock
       kanata_rsenq.io.coreid:= io.hartId
       kanata_rsenq.io.index := i.U
@@ -400,13 +400,13 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
 
     //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
     if (!env.FPGAPlatform){
-      val kanata_issue_sel = Module(new DifftestKanataStageInfo)           
+      val kanata_issue_sel = Module(new DifftestKanataStageIS9Info)           
       kanata_issue_sel.io.clock := clock
       kanata_issue_sel.io.coreid:= io.hartId
       kanata_issue_sel.io.index := i.U
-      kanata_issue_sel.io.stage := 9.U /*issue enq*/
+      kanata_issue_sel.io.stage := 9.U /*issue sel*/
       kanata_issue_sel.io.valid := s1_out(i).valid
-      kanata_issue_sel.io.stall := issueVec(i).valid && !s1_out(i).ready
+      kanata_issue_sel.io.stall := !s1_out(i).ready
       kanata_issue_sel.io.clear := s1_out(i).bits.uop.robIdx.needFlush(io.redirect)
       kanata_issue_sel.io.sid   := s1_out(i).bits.uop.cf.uopsid
       kanata_issue_sel.io.mid   := s1_out(i).bits.uop.cf.uopmid
@@ -449,7 +449,7 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
        //kanata print
     //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) { 
     if (!env.FPGAPlatform){  
-      val kanata_issue_fastdeq = Module(new DifftestKanataStageInfo)           
+      val kanata_issue_fastdeq = Module(new DifftestKanataStageIS10Info)           
       kanata_issue_fastdeq.io.clock := clock
       kanata_issue_fastdeq.io.coreid:= io.hartId
       kanata_issue_fastdeq.io.index := i.U
@@ -607,7 +607,7 @@ class ReservationStation(params: RSParams)(implicit p: Parameters) extends XSMod
 
     //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {
     if (!env.FPGAPlatform){  
-      val kanata_issue_normaldeq = Module(new DifftestKanataStageInfo)           
+      val kanata_issue_normaldeq = Module(new DifftestKanataStageIS10Info)           
       kanata_issue_normaldeq.io.clock := clock
       kanata_issue_normaldeq.io.coreid:= io.hartId
       kanata_issue_normaldeq.io.index := i.U

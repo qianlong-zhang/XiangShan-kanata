@@ -470,23 +470,7 @@ class SchedulerImp(outer: Scheduler) extends LazyModuleImp(outer) with HasXSPara
     difftest.io.fpr := fpRfReadData.takeRight(32)
   }
 
-  //kanata print
-  //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {   
-  if (!env.FPGAPlatform){ 
-    for (i <- 0 until outer.numIssuePorts) {
-    val kanata_dispatch2rs = Module(new DifftestKanataStageInfo)           
-
-      kanata_dispatch2rs.io.clock := clock
-      kanata_dispatch2rs.io.coreid:= io.hartId
-      kanata_dispatch2rs.io.index := i.U
-      kanata_dispatch2rs.io.stage := 7.U /*dispatch to rs*/
-      kanata_dispatch2rs.io.valid := io.issue(i).valid
-      kanata_dispatch2rs.io.stall := !io.issue(i).fire
-      kanata_dispatch2rs.io.clear := io.redirect.valid
-      kanata_dispatch2rs.io.sid   := io.issue(i).bits.uop.cf.uopsid
-      kanata_dispatch2rs.io.mid   := io.issue(i).bits.uop.cf.uopmid
-    }
-  }   
+   
 
 
   XSPerfAccumulate("allocate_valid", PopCount(allocate.map(_.valid)))

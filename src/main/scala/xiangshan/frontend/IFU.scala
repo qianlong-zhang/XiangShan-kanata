@@ -486,10 +486,10 @@ with HasCircularQueuePtrHelper
         // every fetch req fetch PredictWidth(in FetchToIBuffer) insts into ibuffer
         if0_fetch_sid := if0_fetch_sid + PredictWidth.U
       }                  
-      val kanata_stageIF0 = Module(new DifftestKanataStageInfo)            
+      val kanata_stageIF0 = Module(new DifftestKanataStageIF0Info)            
       kanata_stageIF0.io.clock := clock
       kanata_stageIF0.io.coreid:= io.hartId
-      kanata_stageIF0.io.index := DontCare
+      kanata_stageIF0.io.index := 0.U
       kanata_stageIF0.io.stage := 0.U /*IF0*/
       kanata_stageIF0.io.valid := f0_valid
       kanata_stageIF0.io.stall := 0.U
@@ -499,10 +499,10 @@ with HasCircularQueuePtrHelper
      
       
       val if1_fetch_sid = RegEnable(next = if0_fetch_sid,    enable=f0_fire)
-      val kanata_stageIF1 = Module(new DifftestKanataStageInfo)
+      val kanata_stageIF1 = Module(new DifftestKanataStageIF1Info)
       kanata_stageIF1.io.clock := clock
       kanata_stageIF1.io.coreid:= io.hartId
-      kanata_stageIF1.io.index := DontCare
+      kanata_stageIF1.io.index := 0.U
       kanata_stageIF1.io.stage := 1.U
       kanata_stageIF1.io.valid := f1_valid
       kanata_stageIF1.io.stall := 0.U
@@ -511,10 +511,10 @@ with HasCircularQueuePtrHelper
       kanata_stageIF1.io.mid   := 0.U
 
       val if2_fetch_sid = RegEnable(next = if1_fetch_sid,    enable=f1_fire)
-      val kanata_stageIF2 = Module(new DifftestKanataStageInfo)
+      val kanata_stageIF2 = Module(new DifftestKanataStageIF2Info)
       kanata_stageIF2.io.clock := clock
       kanata_stageIF2.io.coreid:= io.hartId
-      kanata_stageIF2.io.index := DontCare
+      kanata_stageIF2.io.index := 0.U
       kanata_stageIF2.io.stage := 2.U
       kanata_stageIF2.io.valid := f2_valid
       kanata_stageIF2.io.stall := 0.U
@@ -523,10 +523,10 @@ with HasCircularQueuePtrHelper
       kanata_stageIF2.io.mid   := 0.U
 
       val if3_fetch_sid = RegEnable(next = if2_fetch_sid,    enable=f2_fire)
-      val kanata_stageIF3 = Module(new DifftestKanataStageInfo)
+      val kanata_stageIF3 = Module(new DifftestKanataStageIF3Info)
       kanata_stageIF3.io.clock := clock
       kanata_stageIF3.io.coreid:= io.hartId
-      kanata_stageIF3.io.index := DontCare  
+      kanata_stageIF3.io.index := 0.U  
       kanata_stageIF3.io.stage := 3.U
       kanata_stageIF3.io.valid := f3_valid
       kanata_stageIF3.io.stall := 0.U

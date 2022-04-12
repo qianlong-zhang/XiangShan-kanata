@@ -175,13 +175,13 @@ class Rename(implicit p: Parameters) extends XSModule {
       //kanata print
     //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
     if (!env.FPGAPlatform){    
-      val kanata_rename = Module(new DifftestKanataStageInfo)           
+      val kanata_rename = Module(new DifftestKanataStageRN5Info)           
         kanata_rename.io.clock := clock
         kanata_rename.io.coreid:= io.hartId
         kanata_rename.io.index := i.U
         kanata_rename.io.stage := 5.U
         kanata_rename.io.valid := io.in(i).valid
-        kanata_rename.io.stall := io.in(i).valid && !io.out(i).valid
+        kanata_rename.io.stall := !io.out(0).ready || (io.out(0).ready && (!fpFreeList.io.canAllocate ||  !intFreeList.io.canAllocate || !io.robCommits.isWalk))
         kanata_rename.io.clear := io.redirect.valid
         kanata_rename.io.sid   := io.in(i).bits.cf.uopsid
         kanata_rename.io.mid   := io.in(i).bits.cf.uopmid

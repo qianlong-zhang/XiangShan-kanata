@@ -351,6 +351,10 @@ class CtrlBlock(implicit p: Parameters) extends XSModule
 
   io.dispatch <> intDq.io.deq ++ lsDq.io.deq ++ fpDq.io.deq
 
+  intDq.io.hartId := io.hartId
+  fpDq.io.hartId  := io.hartId
+  lsDq.io.hartId  := io.hartId
+
   val pingpong = RegInit(false.B)
   pingpong := !pingpong
   val jumpInst = Mux(pingpong && (exuParameters.AluCnt > 2).B, io.dispatch(2).bits, io.dispatch(0).bits)
@@ -368,19 +372,6 @@ class CtrlBlock(implicit p: Parameters) extends XSModule
     rob_wb.bits := RegNext(wb.bits)
     rob_wb.bits.uop.debugInfo.writebackTime := timer
 
-    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
-    if (!env.FPGAPlatform){
-        val kanata_wb = Module(new DifftestKanataStageInfo)           
-        kanata_wb.io.clock := clock
-        kanata_wb.io.coreid:= io.hartId
-        kanata_wb.io.index := DontCare
-        kanata_wb.io.stage := 11.U /*write back*/
-        kanata_wb.io.valid := wb.valid
-        kanata_wb.io.stall := 0.U
-        kanata_wb.io.clear := wb.bits.uop.robIdx.needFlush(stage2Redirect)
-        kanata_wb.io.sid   := wb.bits.uop.cf.uopsid
-        kanata_wb.io.mid   := wb.bits.uop.cf.uopmid
-    }
   }
 
   io.redirect <> stage2Redirect

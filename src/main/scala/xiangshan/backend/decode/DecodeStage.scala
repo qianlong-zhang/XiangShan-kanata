@@ -46,13 +46,11 @@ class DecodeStage(implicit p: Parameters) extends XSModule {
     io.out(i).valid      := io.in(i).valid
     io.out(i).bits       := decoders(i).io.deq.cf_ctrl
     io.in(i).ready       := io.out(i).ready
-  }
 
     //kanata print
-  //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) { 
-  if (!env.FPGAPlatform){     
-     val kanata_decode = Module(new DifftestKanataStageInfo)     
-     for (i <- 0 until DecodeWidth) {
+    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) { 
+    if (!env.FPGAPlatform){   
+      val kanata_decode = Module(new DifftestKanataStageDC4Info)   
       kanata_decode.io.clock := clock
       kanata_decode.io.coreid:= io.hartId
       kanata_decode.io.index := i.U
@@ -61,21 +59,20 @@ class DecodeStage(implicit p: Parameters) extends XSModule {
       kanata_decode.io.stall := !io.out(0).ready
       kanata_decode.io.clear := 0.U
       kanata_decode.io.sid   := io.in(i).bits.uopsid
-      kanata_decode.io.mid   := io.in(i).bits.uopmid
-     }
+      kanata_decode.io.mid   := io.in(i).bits.uopmid        
         
-    val kanata_decode_insn = Module(new DifftestKanataDecodeInsn)
-    for (i <- 0 until DecodeWidth) {        
+      val kanata_decode_insn = Module(new DifftestKanataDecodeInsn)
       kanata_decode_insn.io.clock  := clock
       kanata_decode_insn.io.coreid := io.hartId
       kanata_decode_insn.io.index  := i.U
       kanata_decode_insn.io.sid    := io.in(i).bits.uopsid
       kanata_decode_insn.io.mid    := io.in(i).bits.uopmid
       kanata_decode_insn.io.pc     := io.in(i).bits.pc
-      kanata_decode_insn.io.insn   := io.in(i).bits.instr  
-    }
+      kanata_decode_insn.io.insn   := io.in(i).bits.instr        
+    }    
   }
-  
+
+
    
 
   // instruction fusion

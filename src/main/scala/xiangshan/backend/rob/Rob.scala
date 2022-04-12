@@ -420,6 +420,21 @@ class Rob(numWbPorts: Int)(implicit p: Parameters) extends XSModule with HasCirc
         p"skip ${io.exeWbResults(i).bits.debug.isMMIO} robIdx: ${io.exeWbResults(i).bits.uop.robIdx}\n"
       )
     }
+
+
+        //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
+    if (!env.FPGAPlatform){
+        val kanata_wb = Module(new DifftestKanataStageWB11Info)           
+        kanata_wb.io.clock := clock
+        kanata_wb.io.coreid:= io.hartId
+        kanata_wb.io.index := i.U
+        kanata_wb.io.stage := 11.U /*write back*/
+        kanata_wb.io.valid := io.exeWbResults(i).valid
+        kanata_wb.io.stall := 0.U
+        kanata_wb.io.clear := io.flushOut.valid
+        kanata_wb.io.sid   := io.exeWbResults(i).bits.uop.cf.uopsid
+        kanata_wb.io.mid   := io.exeWbResults(i).bits.uop.cf.uopmid
+    }
   }
   val writebackNum = PopCount(io.exeWbResults.map(_.valid))
   XSInfo(writebackNum =/= 0.U, "writebacked %d insts\n", writebackNum)
@@ -842,7 +857,7 @@ class Rob(numWbPorts: Int)(implicit p: Parameters) extends XSModule with HasCirc
   //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {  
   if (!env.FPGAPlatform){
     for (i <- 0 until CommitWidth) {
-    val kanata_cm = Module(new DifftestKanataStageInfo)           
+      val kanata_cm = Module(new DifftestKanataStageCM12Info)           
       kanata_cm.io.clock := clock
       kanata_cm.io.coreid:= io.hartId
       kanata_cm.io.index := i.U

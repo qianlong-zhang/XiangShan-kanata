@@ -22,9 +22,11 @@ import chisel3.util._
 import utils._
 import xiangshan._
 import xiangshan.backend.rob.RobPtr
+import difftest._
 
 class DispatchQueueIO(enqnum: Int, deqnum: Int)(implicit p: Parameters) extends XSBundle {
-  val enq = new Bundle {
+  val hartId = Input(UInt(8.W))
+  val enq = new Bundle {    
     // output: dispatch queue can accept new requests
     val canAccept = Output(Bool())
     // input: need to allocate new entries (for address computing)
@@ -195,6 +197,23 @@ class DispatchQueue(size: Int, enqnum: Int, deqnum: Int, name: String)(implicit 
     // io.deq(i).bits := debug_uopEntries(headPtr(i).value)
     // do not dequeue when io.redirect valid because it may cause dispatchPtr work improperly
     io.deq(i).valid := stateEntries(headPtr(i).value) === s_valid && !lastCycleMisprediction
+
+
+      //kanata print
+    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {   
+    if (!env.FPGAPlatform){       
+      val kanata_dispatch2rs = Module(new DifftestKanataStageDP7Info)      
+        kanata_dispatch2rs.io.clock := clock
+        kanata_dispatch2rs.io.coreid:= io.hartId
+        kanata_dispatch2rs.io.index := i.U
+        kanata_dispatch2rs.io.stage := 7.U /*dispatch to rs*/
+        kanata_dispatch2rs.io.valid := io.deq(i).valid
+        kanata_dispatch2rs.io.stall := !io.deq(i).fire
+        kanata_dispatch2rs.io.clear := stateEntries(headPtr(i).value) === s_invalid || lastCycleMisprediction
+        kanata_dispatch2rs.io.sid   := io.deq(i).bits.cf.uopsid
+        kanata_dispatch2rs.io.mid   := io.deq(i).bits.cf.uopmid      
+    }  
+  
   }
    
   // debug: dump dispatch queue states

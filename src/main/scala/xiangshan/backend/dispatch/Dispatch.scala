@@ -267,15 +267,16 @@ class Dispatch(implicit p: Parameters) extends XSModule with HasExceptionNO {
     XSDebug(io.toLsDq.req(i).valid , p"pc 0x${Hexadecimal(io.toLsDq.req(i).bits.cf.pc )} ls  index $i\n")
 
     
-   //kanata print
-    if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
-      val kanata_dispatch = Module(new DifftestKanataStageInfo)           
+    //kanata print
+    //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
+    if (!env.FPGAPlatform) { 
+      val kanata_dispatch = Module(new DifftestKanataStageDP6Info)           
         kanata_dispatch.io.clock := clock
         kanata_dispatch.io.coreid:= io.hartId
         kanata_dispatch.io.index := i.U
         kanata_dispatch.io.stage := 6.U
         kanata_dispatch.io.valid := io.fromRename(i).valid
-        kanata_dispatch.io.stall := io.enqRob.req(i).valid
+        kanata_dispatch.io.stall := !allResourceReady
         kanata_dispatch.io.clear := io.redirect.valid
         kanata_dispatch.io.sid   := io.fromRename(i).bits.cf.uopsid
         kanata_dispatch.io.mid   := io.fromRename(i).bits.cf.uopmid

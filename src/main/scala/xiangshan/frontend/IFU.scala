@@ -481,11 +481,10 @@ with HasCircularQueuePtrHelper
   //kanata print
   //if (!env.FPGAPlatform && env.EnableDifftest && env.EnableKanata) {      
     if (!env.FPGAPlatform){
-      val if0_fetch_sid = RegInit(0.U(64.W))
-      when(fromFtq.req.fire() && !f0_flush) {
-        // every fetch req fetch PredictWidth(in FetchToIBuffer) insts into ibuffer
-        if0_fetch_sid := if0_fetch_sid + PredictWidth.U
-      }                  
+      val if0_fetch_sid = RegInit(0.U(64.W))      
+      val if1_fetch_sid = RegInit(0.U(64.W))      
+      val if2_fetch_sid = RegInit(0.U(64.W))      
+      val if3_fetch_sid = RegInit(0.U(64.W))      
       val kanata_stageIF0 = Module(new DifftestKanataStageIF0Info)            
       kanata_stageIF0.io.clock := clock
       kanata_stageIF0.io.coreid:= io.hartId
@@ -498,7 +497,7 @@ with HasCircularQueuePtrHelper
       kanata_stageIF0.io.mid   := 0.U
      
       
-      val if1_fetch_sid = RegEnable(next = if0_fetch_sid,    enable=f0_fire)
+      if1_fetch_sid := RegEnable(next = if0_fetch_sid,    enable=f0_fire)
       val kanata_stageIF1 = Module(new DifftestKanataStageIF1Info)
       kanata_stageIF1.io.clock := clock
       kanata_stageIF1.io.coreid:= io.hartId
@@ -510,7 +509,7 @@ with HasCircularQueuePtrHelper
       kanata_stageIF1.io.sid   := if1_fetch_sid
       kanata_stageIF1.io.mid   := 0.U
 
-      val if2_fetch_sid = RegEnable(next = if1_fetch_sid,    enable=f1_fire)
+      if2_fetch_sid := RegEnable(next = if1_fetch_sid,    enable=f1_fire)
       val kanata_stageIF2 = Module(new DifftestKanataStageIF2Info)
       kanata_stageIF2.io.clock := clock
       kanata_stageIF2.io.coreid:= io.hartId
@@ -522,7 +521,7 @@ with HasCircularQueuePtrHelper
       kanata_stageIF2.io.sid   := if2_fetch_sid
       kanata_stageIF2.io.mid   := 0.U
 
-      val if3_fetch_sid = RegEnable(next = if2_fetch_sid,    enable=f2_fire)
+      if3_fetch_sid := RegEnable(next = if2_fetch_sid,    enable=f2_fire)
       val kanata_stageIF3 = Module(new DifftestKanataStageIF3Info)
       kanata_stageIF3.io.clock := clock
       kanata_stageIF3.io.coreid:= io.hartId
@@ -535,6 +534,11 @@ with HasCircularQueuePtrHelper
       kanata_stageIF3.io.mid   := 0.U
 
       io.toIbuffer.bits.fetch_sid := if3_fetch_sid
+
+      when(fromFtq.req.fire() && !f0_flush) {
+        // every fetch req fetch PredictWidth(in FetchToIBuffer) insts into ibuffer
+        if0_fetch_sid := if0_fetch_sid + PredictWidth.U
+      }               
   }
   
 

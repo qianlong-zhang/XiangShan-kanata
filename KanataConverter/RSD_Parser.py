@@ -63,7 +63,8 @@ class RSD_Parser(object):
         # |----g---r--|-----------|: n = A
         # |--------r--|--g--------|: n = B
         # |--------g--|--r--------|: n = A
-        g = mid + iid * RSD_Parser.MAX_MICRO_OPS_PER_INSN
+        # g = mid + iid * RSD_Parser.MAX_MICRO_OPS_PER_INSN
+        g = iid * RSD_Parser.MAX_MICRO_OPS_PER_INSN
         W = RSD_Parser.GID_WRAP_AROUND
         M = W / 4
         r = self.maxRetiredOp_ % W
@@ -300,13 +301,15 @@ class RSD_Parser(object):
         Format:
             'L', iid, mid, pc, code
         """
+        print("prossing L line")
         iid = int(words[1])
         mid = int(words[2])
         pc = words[3]
         code = words[4]
         gid = self.CreateGID_(iid, mid)
-
+        
         if gid not in self.ops_:
+            print("ops_:", self.ops_)
             print("Label is outputtted with an unknown gid:%d" % gid)
         op = self.ops_[gid]
 
@@ -375,7 +378,9 @@ class RSD_Parser(object):
         
         # Parse lines.
         while True:
+            print "Prossing line", self.lineNum_
             line = file.readline()
+            print "Line:", line
             if line == "" :
                 break
             self.ProcessLine_(line)
